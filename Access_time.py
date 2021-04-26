@@ -68,6 +68,60 @@ def access_times(n, c_p, c_u, c_e):
     return V, choice
 
 
-V, choices = access_times(4, 1, 1, 0.5)
+def access_times2(n, c_p, c_u, c_e,b,max_ins):
+    V = np.zeros(shape=(n, n*max_new+1, n*max_new+1))
+    choice = np.zeros(shape=(n, n * max_new + 1, n*max_new+1))
+    for i in range(n*max_new+1):
+        for t in range(n*max_new):
+            if t < max_ins:
+                c_eb = c_e - b
+            if t >= max_ins:
+                c_eb = c_e
+            V_all = []
+            for d in D:
+                summa = 0
+                if d >= i:
+                    for ind in range(len(new_people)):
+                        j = new_people[ind]
+                        if j <= d - i:
+                            summa += p_n[(n+1) in holiday_weeks][ind]*(c_u*(d-i-j)+c_eb*(i+j))
+                        if d-i < j:
+                            summa += p_n[(n+1) in holiday_weeks][ind]*(c_p*(i+j-d)+c_eb*d)
+                if d < i:
+                    for ind in range(len(new_people)):
+                        j = new_people[ind]
+                        summa += p_n[(n+1) in holiday_weeks][ind]*(c_p*(i+j-d)+c_eb*d)
+                V_all.append(summa)
+            V[n-1,i,t] = min(V_all)
+            choice[n-1,i,t] = D[V_all.index(min(V_all))]
+    for k in range(n-2,-1,-1):
+        for i in range(k*max_new+1):
+            for t in range(k*max_new+1):
+                if t < max_ins:
+                    c_eb = c_e - b
+                if t >= max_ins:
+                    c_eb = c_e
+                V_all = []
+                for d in D:
+                    summa = 0
+                    if d >= i:
+                        for ind in range(len(new_people)):
+                            j = new_people[ind]
+                            if j <= d - i:
+                                summa += p_n[(k+1) in holiday_weeks][ind] * (c_u * (d - i - j) + c_eb*(i+j) + V[k+1, 0,t + i + j])
+                            if d - i < j:
+                                summa += p_n[(k+1) in holiday_weeks][ind] * (c_p * (i + j - d) + c_eb*d + V[k+1, i + j - d, t + d])
+                    if d < i:
+                        for ind in range(len(new_people)):
+                            j = new_people[ind]
+                            summa += p_n[(k+1) in holiday_weeks][ind] * (c_p * (i + j - d) + c_eb*d + V[k+1, i + j - d, t + d])
+                    V_all.append(summa)
+                V[k, i, t] = min(V_all)
+                choice[k, i, t] = D[V_all.index(min(V_all))]
+    return V, choice
+
+
+V, choices = access_times2(4, 1, 1, 0.5, 3,100)
 print(V)
-print(choices)
+print(choices[2,10,:])
+print(np.zeros(shape = (2,2,3)))

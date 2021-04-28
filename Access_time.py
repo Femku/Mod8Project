@@ -25,54 +25,11 @@ max_new = new_people[-1]
 p_n = {False: p_r,True: p_h}
 
 
-def access_times(n, c_p, c_u, c_e):
-    V = np.zeros(shape=(n, n*max_new+1))
-    choice = np.zeros(shape=(n, n * max_new + 1))
+def access_times(n, c_p, c_u, c_e, b, max_ins):
+    V = np.full(shape=(n, n*max_new+1, n*max_new+1), fill_value= np.inf)
+    choice = np.full(shape=(n, n * max_new + 1, n*max_new+1), fill_value= np.inf)
     for i in range(n*max_new+1):
-        V_all = []
-        for d in D:
-            summa = 0
-            if d >= i:
-                for ind in range(len(new_people)):
-                    j = new_people[ind]
-                    if j <= d - i:
-                        summa += p_n[(n+1) in holiday_weeks][ind]*(c_u*(d-i-j)+c_e*(i+j))
-                    if d-i < j:
-                        summa += p_n[(n+1) in holiday_weeks][ind]*(c_p*(i+j-d)+c_e*d)
-            if d < i:
-                for ind in range(len(new_people)):
-                    j = new_people[ind]
-                    summa += p_n[(n+1) in holiday_weeks][ind]*(c_p*(i+j-d)+c_e*d)
-            V_all.append(summa)
-        V[n-1,i] = min(V_all)
-        choice[n-1,i] = D[V_all.index(min(V_all))]
-    for k in range(n-2,-1,-1):
-        for i in range(k*max_new+1):
-            V_all = []
-            for d in D:
-                summa = 0
-                if d >= i:
-                    for ind in range(len(new_people)):
-                        j = new_people[ind]
-                        if j <= d - i:
-                            summa += p_n[(k+1) in holiday_weeks][ind] * (c_u * (d - i - j) + c_e*(i+j) + V[k+1, 0])
-                        if d - i < j:
-                            summa += p_n[(k+1) in holiday_weeks][ind] * (c_p * (i + j - d) + c_e*d + V[k+1, i + j - d])
-                if d < i:
-                    for ind in range(len(new_people)):
-                        j = new_people[ind]
-                        summa += p_n[(k+1) in holiday_weeks][ind] * (c_p * (i + j - d) + c_e*d + V[k+1, i + j - d])
-                V_all.append(summa)
-            V[k, i] = min(V_all)
-            choice[k, i] = D[V_all.index(min(V_all))]
-    return V, choice
-
-
-def access_times2(n, c_p, c_u, c_e,b,max_ins):
-    V = np.zeros(shape=(n, n*max_new+1, n*max_new+1))
-    choice = np.zeros(shape=(n, n * max_new + 1, n*max_new+1))
-    for i in range(n*max_new+1):
-        for t in range(n*max_new):
+        for t in range(n*max_new+1-i):
             if t < max_ins:
                 c_eb = c_e - b
             if t >= max_ins:
@@ -96,7 +53,7 @@ def access_times2(n, c_p, c_u, c_e,b,max_ins):
             choice[n-1,i,t] = D[V_all.index(min(V_all))]
     for k in range(n-2,-1,-1):
         for i in range(k*max_new+1):
-            for t in range(k*max_new+1):
+            for t in range(k*max_new+1-i):
                 if t < max_ins:
                     c_eb = c_e - b
                 if t >= max_ins:
@@ -108,7 +65,7 @@ def access_times2(n, c_p, c_u, c_e,b,max_ins):
                         for ind in range(len(new_people)):
                             j = new_people[ind]
                             if j <= d - i:
-                                summa += p_n[(k+1) in holiday_weeks][ind] * (c_u * (d - i - j) + c_eb*(i+j) + V[k+1, 0,t + i + j])
+                                summa += p_n[(k+1) in holiday_weeks][ind] * (c_u * (d - i - j) + c_eb*(i+j) + V[k+1, 0, t + i + j])
                             if d - i < j:
                                 summa += p_n[(k+1) in holiday_weeks][ind] * (c_p * (i + j - d) + c_eb*d + V[k+1, i + j - d, t + d])
                     if d < i:
@@ -121,7 +78,16 @@ def access_times2(n, c_p, c_u, c_e,b,max_ins):
     return V, choice
 
 
-V, choices = access_times2(4, 1, 1, 0.5, 3,100)
-print(V)
-print(choices[2,10,:])
-print(np.zeros(shape = (2,2,3)))
+n = 4
+c_p = 1
+c_u = 1
+c_e = 0.5
+d = 1
+max_ins = 100
+V, choices = access_times(n, c_p, c_u, c_e, d, max_ins)
+with pd.ExcelWriter("output.xlsx") as writer:
+    for i in range(n):
+        df1 = pd.DataFrame(V[i,:,:])
+        df2 = pd.DataFrame(choices[i,:,:])
+        df1.to_excel(excel_writer=writer, sheet_name=f'n={i} E(c)')
+        df2.to_excel(excel_writer=writer, sheet_name=f'n={i} choices')

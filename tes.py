@@ -1,0 +1,1 @@
+print([k for k in range(4-2,-1,-1)])

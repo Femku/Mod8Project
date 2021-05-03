@@ -1,7 +1,5 @@
 # pip install pandas ++
 # pip install openpyxl ++
-# pip install xlrd --
-# pip install wheel --
 
 import pandas as pd
 import numpy as np
@@ -26,6 +24,19 @@ p_n = {False: p_r,True: p_h}
 
 
 def access_times(n, c_p, c_u, c_e, b, max_ins):
+    """
+       Computes the optimal decision for deciding how many slots to open. By minimizing the expected costs.
+       Returning the decisions and costs in a matrix
+       :param n: number of weeks (n in {0,1,2,...,51})
+       :param c_p: cost for putting a patient on the waiting list for one week
+       :param c_u: cost for an unused appointment
+       :param c_e: cost for a treatment
+       :param b: reimbursement for a treatment
+       :param max_ins: maximal number of patients that the outpatient clinic gets a reimbursument
+
+       :return: results of the optimal value function
+       :return: The optimal decisions
+       """
     V = np.full(shape=(n, n*max_new+1, n*max_new+1), fill_value= np.inf)
     choice = np.full(shape=(n, n * max_new + 1, n*max_new+1), fill_value= np.inf)
     for i in range(n*max_new+1):
@@ -85,6 +96,7 @@ c_e = 0.5
 d = 1
 max_ins = 100
 V, choices = access_times(n, c_p, c_u, c_e, d, max_ins)
+print(V)
 with pd.ExcelWriter("output.xlsx") as writer:
     for i in range(n):
         df1 = pd.DataFrame(V[i,:,:])
